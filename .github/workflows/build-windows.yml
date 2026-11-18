@@ -1,0 +1,49 @@
+name: Compilar VS Stage (Windows)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            git
+
+      - name: Configurar
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVSS_BUILD_TESTS=ON
+
+      - name: Compilar
+        run: cmake --build build -j4
+
+      - name: Testes do núcleo (sem placa de som)
+        continue-on-error: true
+        run: |
+          export VSS_AUDIO_BACKEND=null
+          ./build/mapper_test.exe
+          ./build/core_test.exe
+
+      - name: Montar pasta de distribuição
+        run: |
+          mkdir -p dist/VSStage
+          cp build/VSStage.exe dist/VSStage/
+          cp README.md dist/VSStage/LEIA-ME.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VSStage-windows-x64
+          path: dist/VSStage
