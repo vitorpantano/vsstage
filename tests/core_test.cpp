@@ -36,7 +36,11 @@ static bool waitLoaded(Player& p, int ms = 20000) {
 }
 
 int main() {
+    #if defined(_WIN32)
+    _putenv_s("VSS_AUDIO_BACKEND", "null");
+#else
     setenv("VSS_AUDIO_BACKEND", "null", 1);
+#endif
     fs::path tmp = fs::temp_directory_path() / "vss_core_test";
     fs::remove_all(tmp); fs::create_directories(tmp / "src");
     writeWav(tmp / "src" / "01 Teste Song - Click.wav", 30, 120.0, true, 0);
